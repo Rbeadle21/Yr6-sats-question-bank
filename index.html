@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SATs Question Bank</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -561,9 +562,35 @@
                     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
                 });
 
-                const response = await fetch('sats_questions.db');
-                const buffer = await response.arrayBuffer();
-                db = new SQL.Database(new Uint8Array(buffer));
+                document.getElementById('loading').innerHTML = 'Downloading database (28 MB)... Please wait.';
+
+                // Load zipped database from GitHub Releases
+                const dbUrl = 'https://github.com/Rbeadle21/Yr6-sats-question-bank/releases/download/v1.0/sats_questions.zip';
+                
+                const response = await fetch(dbUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to download database (HTTP ${response.status})`);
+                }
+                
+                document.getElementById('loading').innerHTML = 'Extracting database... Please wait.';
+                
+                // Get the zip file
+                const zipBlob = await response.blob();
+                
+                // Unzip it
+                const zip = await JSZip.loadAsync(zipBlob);
+                const dbFile = zip.file('sats_questions.db');
+                
+                if (!dbFile) {
+                    throw new Error('Database file not found in zip archive');
+                }
+                
+                const dbBuffer = await dbFile.async('arraybuffer');
+                
+                document.getElementById('loading').innerHTML = 'Loading database... Please wait.';
+                
+                db = new SQL.Database(new Uint8Array(dbBuffer));
 
                 console.log('Database loaded successfully');
                 loadCategoryTree();
@@ -573,8 +600,22 @@
                 document.getElementById('app').style.display = 'block';
             } catch (error) {
                 console.error('Error loading database:', error);
-                document.getElementById('loading').innerHTML = 
-                    '❌ Error loading database. Please ensure sats_questions.db is in the same directory as this file.';
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h3 style="color: #e74c3c; margin-bottom: 20px;">❌ Database Loading Error</h3>
+                        <p style="color: #666; margin-bottom: 15px;">
+                            The database couldn't be loaded from GitHub Releases.
+                        </p>
+                        <p style="color: #666; margin-bottom: 15px;">
+                            <strong>Please check:</strong><br>
+                            1. Release v1.0 exists at <a href="https://github.com/Rbeadle21/Yr6-sats-question-bank/releases" target="_blank">Releases</a><br>
+                            2. sats_questions.zip is attached to the release
+                        </p>
+                        <p style="color: #999; font-size: 13px; font-family: monospace;">
+                            Error: ${error.message}
+                        </p>
+                    </div>
+                `;
             }
         }
 
