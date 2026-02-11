@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SATs Question Bank</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -27,9 +25,35 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
         h1 {
             color: #2c3e50;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .branding {
+            text-align: right;
+        }
+        
+        .branding-text {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        
+        .branding img {
+            height: 40px;
+            width: auto;
         }
         
         .loading {
@@ -79,7 +103,6 @@
             font-size: 14px;
         }
         
-        /* Category Tree Styles */
         .category-tree {
             max-height: 400px;
             overflow-y: auto;
@@ -232,7 +255,6 @@
             font-size: 14px;
         }
         
-        /* Worksheet Styles */
         .worksheet-container {
             display: flex;
             gap: 20px;
@@ -467,20 +489,20 @@
 </head>
 <body>
     <div class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="header-content">
             <div>
                 <h1>📚 SATs Mathematics Question Bank</h1>
-                <p style="color: #666; margin-top: 5px;">Year 6 SATs Practice Questions (2000-2025)</p>
+                <p class="subtitle">Year 6 SATs Practice Questions (2000-2025)</p>
             </div>
-            <div style="text-align: right;">
-                <p style="font-size: 12px; color: #999; margin-bottom: 5px;">Brought to you by</p>
-                <img src="logo.png" alt="Script Work Studio" style="height: 40px; width: auto; object-fit: contain;">
+            <div class="branding">
+                <p class="branding-text">Brought to you by</p>
+                <img src="logo.png" alt="Script Work Studio">
             </div>
         </div>
     </div>
 
     <div id="loading" class="loading">
-        Loading database... Please wait.
+        Loading questions... Please wait.
     </div>
 
     <div id="app" style="display: none;">
@@ -528,7 +550,7 @@
                     <button class="btn-secondary" onclick="printWorksheet()">🖨️ Print Worksheet</button>
                     <button class="btn-secondary" onclick="printAnswerSheet()">📄 Print Answers</button>
                     <button id="editModeBtn" class="btn-secondary" onclick="toggleEditMode()">✏️ Edit Mode</button>
-                    <button id="downloadDbBtn" class="btn-success" onclick="downloadDatabase()" style="display: none;">💾 Download Updated Database</button>
+                    <button id="downloadBtn" class="btn-success" onclick="downloadJSON()" style="display: none;">💾 Download Updated JSON</button>
                 </div>
             </div>
         </div>
@@ -548,118 +570,62 @@
     </div>
 
     <script>
-        let db = null;
+        let questionsData = [];
         let currentQuestions = [];
         let showAnswers = false;
-        let availableQuestions = [];
         let editMode = false;
-        let dbModified = false;
+        let availableQuestions = [];
+        const imageFolder = 'images/';
 
-        // Initialize SQL.js and load database
-        async function initDatabase() {
+        // Load questions from JSON
+        async function loadQuestions() {
             try {
-                const SQL = await initSqlJs({
-                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
-                });
-
-                document.getElementById('loading').innerHTML = 'Downloading database (28 MB)... Please wait.';
-
-                // Load from repository root (served via jsDelivr CDN to avoid CORS)
-                const dbUrl = 'https://cdn.jsdelivr.net/gh/Rbeadle21/Yr6-sats-question-bank/sats_questions.zip';
+                const response = await fetch('questions.json');
+                const data = await response.json();
+                questionsData = data.questions;
                 
-                console.log('Attempting to fetch from:', dbUrl);
-                
-                const response = await fetch(dbUrl);
-                
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to download database (HTTP ${response.status})`);
-                }
-                
-                document.getElementById('loading').innerHTML = 'Extracting database... Please wait.';
-                
-                // Get the zip file
-                const zipBlob = await response.blob();
-                console.log('Downloaded zip size:', zipBlob.size, 'bytes');
-                
-                // Unzip it
-                const zip = await JSZip.loadAsync(zipBlob);
-                console.log('Zip contents:', Object.keys(zip.files));
-                
-                const dbFile = zip.file('sats_questions.db');
-                
-                if (!dbFile) {
-                    throw new Error('Database file not found in zip. Files: ' + Object.keys(zip.files).join(', '));
-                }
-                
-                const dbBuffer = await dbFile.async('arraybuffer');
-                console.log('Database buffer size:', dbBuffer.byteLength, 'bytes');
-                
-                document.getElementById('loading').innerHTML = 'Loading database... Please wait.';
-                
-                db = new SQL.Database(new Uint8Array(dbBuffer));
-
-                console.log('Database loaded successfully');
+                console.log(`Loaded ${questionsData.length} questions`);
                 loadCategoryTree();
                 updateStats();
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
             } catch (error) {
-                console.error('Detailed error:', error);
+                console.error('Error loading questions:', error);
                 document.getElementById('loading').innerHTML = `
-                    <div style="text-align: center; padding: 40px;">
-                        <h3 style="color: #e74c3c; margin-bottom: 20px;">❌ Database Loading Error</h3>
-                        <p style="color: #666; margin-bottom: 15px;">
-                            The database couldn't be loaded.
-                        </p>
-                        <p style="color: #666; margin-bottom: 15px;">
-                            <strong>Possible issues:</strong><br>
-                            1. The database file may still be propagating through the CDN (wait a few minutes)<br>
-                            2. The v1.0 tag needs to exist in the repository<br>
-                            3. sats_questions.zip must be in the root of the repository
-                        </p>
-                        <p style="color: #999; font-size: 13px; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px;">
-                            Error: ${error.message}
-                        </p>
-                        <p style="color: #666; margin-top: 15px; font-size: 13px;">
-                            Press F12 and check Console tab for details.
-                        </p>
+                    <div style="color: #e74c3c;">
+                        ❌ Error loading questions.json<br>
+                        <span style="font-size: 14px;">Please ensure questions.json is in the same directory.</span>
                     </div>
                 `;
             }
         }
 
-        // Load category tree with checkboxes
+        // Load category tree
         function loadCategoryTree() {
-            const stmt = db.prepare(`
-                SELECT 
-                    category,
-                    subcategory,
-                    COUNT(DISTINCT question_id) as count
-                FROM topics
-                GROUP BY category, subcategory
-                ORDER BY category, subcategory
-            `);
-
             const categories = {};
-            while (stmt.step()) {
-                const row = stmt.getAsObject();
-                if (!categories[row.category]) {
-                    categories[row.category] = [];
-                }
-                categories[row.category].push({
-                    name: row.subcategory,
-                    count: row.count
+            
+            // Build category structure
+            questionsData.forEach(q => {
+                q.topic.forEach(topicStr => {
+                    const parts = topicStr.split(' > ');
+                    if (parts.length === 2) {
+                        const [category, subcategory] = parts;
+                        if (!categories[category]) {
+                            categories[category] = {};
+                        }
+                        if (!categories[category][subcategory]) {
+                            categories[category][subcategory] = 0;
+                        }
+                        categories[category][subcategory]++;
+                    }
                 });
-            }
-            stmt.free();
+            });
 
             const container = document.getElementById('categoryTree');
             container.innerHTML = '';
 
-            for (const [category, subcategories] of Object.entries(categories)) {
+            for (const [category, subcategories] of Object.entries(categories).sort()) {
                 const categoryDiv = document.createElement('div');
                 categoryDiv.className = 'category';
 
@@ -674,15 +640,15 @@
                 const subcatDiv = document.createElement('div');
                 subcatDiv.className = 'subcategories';
 
-                subcategories.forEach(sub => {
+                Object.entries(subcategories).sort().forEach(([sub, count]) => {
                     const subDiv = document.createElement('div');
                     subDiv.className = 'subcategory';
                     subDiv.innerHTML = `
                         <input type="checkbox" class="subcategory-checkbox" 
                                data-category="${category}" 
-                               data-subcategory="${sub.name}">
-                        <span class="subcategory-name">${sub.name}</span>
-                        <span class="question-count">${sub.count}</span>
+                               data-subcategory="${sub}">
+                        <span class="subcategory-name">${sub}</span>
+                        <span class="question-count">${count}</span>
                     `;
                     subcatDiv.appendChild(subDiv);
                 });
@@ -738,28 +704,33 @@
                 return;
             }
 
-            // Count available questions
-            let totalQuestions = 0;
-            selectedTopics.forEach(topic => {
-                const stmt = db.prepare(`
-                    SELECT COUNT(DISTINCT question_id) as count
-                    FROM topics
-                    WHERE category = ? AND subcategory = ?
-                `);
-                stmt.bind([topic.category, topic.subcategory]);
-                if (stmt.step()) {
-                    totalQuestions += stmt.getAsObject().count;
-                }
-                stmt.free();
-            });
+            const matchingQuestions = questionsData.filter(q => 
+                q.topic.some(t => {
+                    const parts = t.split(' > ');
+                    if (parts.length !== 2) return false;
+                    return selectedTopics.some(sel => 
+                        sel.category === parts[0] && sel.subcategory === parts[1]
+                    );
+                })
+            );
 
             stats.innerHTML = `
                 <strong>Selected:</strong> ${selectedTopics.length} topic${selectedTopics.length !== 1 ? 's' : ''} | 
-                ${totalQuestions} available questions
+                ${matchingQuestions.length} available questions
             `;
         }
 
-        // Generate worksheet with random questions
+        // Shuffle array
+        function shuffle(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Generate worksheet
         function generateWorksheet() {
             const selectedTopics = getSelectedTopics();
             
@@ -772,84 +743,33 @@
             const difficulty = document.getElementById('difficultyFilter').value;
             const yearRange = document.getElementById('yearFilter').value;
 
-            // Build WHERE clause for topics
-            const topicConditions = selectedTopics.map((_, i) => 
-                `(t.category = ? AND t.subcategory = ?)`
-            ).join(' OR ');
-
-            const topicParams = selectedTopics.flatMap(t => [t.category, t.subcategory]);
-
-            // Build year filter
-            let yearCondition = '';
-            let yearParams = [];
-            if (yearRange !== 'all') {
-                const [startYear, endYear] = yearRange.split('-').map(Number);
-                yearCondition = ' AND q.year BETWEEN ? AND ?';
-                yearParams = [startYear, endYear];
-            }
-
-            // Build difficulty filter
-            let difficultyCondition = '';
-            let difficultyParams = [];
-            if (difficulty !== 'all') {
-                difficultyCondition = ' AND q.difficulty = ?';
-                difficultyParams = [difficulty];
-            }
-
-            // Query for questions (with RANDOM for shuffling)
-            const query = `
-                SELECT DISTINCT 
-                    q.id, q.year, q.paper, q.question_number, 
-                    q.difficulty, q.marks, q.question, q.answer, q.image_filename
-                FROM questions q
-                JOIN topics t ON q.id = t.question_id
-                WHERE (${topicConditions})
-                ${yearCondition}
-                ${difficultyCondition}
-                ORDER BY RANDOM()
-                LIMIT ?
-            `;
-
-            const params = [...topicParams, ...yearParams, ...difficultyParams, limit];
-            const stmt = db.prepare(query);
-            stmt.bind(params);
-
-            currentQuestions = [];
-            while (stmt.step()) {
-                const row = stmt.getAsObject();
-                
-                // Get topics for this question
-                const topicStmt = db.prepare(`
-                    SELECT category, subcategory 
-                    FROM topics 
-                    WHERE question_id = ?
-                `);
-                topicStmt.bind([row.id]);
-                const topics = [];
-                while (topicStmt.step()) {
-                    const t = topicStmt.getAsObject();
-                    topics.push(`${t.category} > ${t.subcategory}`);
-                }
-                topicStmt.free();
-
-                // Get image data
-                const imgStmt = db.prepare('SELECT image_data FROM images WHERE filename = ?');
-                imgStmt.bind([row.image_filename]);
-                let imageData = null;
-                if (imgStmt.step()) {
-                    const imgRow = imgStmt.getAsObject();
-                    const blob = new Blob([imgRow.image_data], { type: 'image/png' });
-                    imageData = URL.createObjectURL(blob);
-                }
-                imgStmt.free();
-
-                currentQuestions.push({
-                    ...row,
-                    topics: topics,
-                    imageData: imageData
+            // Filter questions
+            let filteredQuestions = questionsData.filter(q => {
+                // Check topics
+                const hasMatchingTopic = q.topic.some(t => {
+                    const parts = t.split(' > ');
+                    if (parts.length !== 2) return false;
+                    return selectedTopics.some(sel => 
+                        sel.category === parts[0] && sel.subcategory === parts[1]
+                    );
                 });
-            }
-            stmt.free();
+                if (!hasMatchingTopic) return false;
+
+                // Check difficulty
+                if (difficulty !== 'all' && q.difficulty !== difficulty) return false;
+
+                // Check year range
+                if (yearRange !== 'all') {
+                    const [startYear, endYear] = yearRange.split('-').map(Number);
+                    if (q.year < startYear || q.year > endYear) return false;
+                }
+
+                return true;
+            });
+
+            // Shuffle and limit
+            filteredQuestions = shuffle(filteredQuestions).slice(0, limit);
+            currentQuestions = filteredQuestions;
 
             renderWorksheet();
             loadAvailableQuestions();
@@ -887,12 +807,13 @@
                             <div class="question-badges">
                                 <span class="difficulty-badge difficulty-${q.difficulty.toLowerCase()}">${q.difficulty}</span>
                                 <span class="question-marks">${q.marks} mark${q.marks > 1 ? 's' : ''}</span>
-                                ${!editMode ? `<button class="btn-danger" onclick="deleteQuestion(${q.id})">✕ Remove</button>` : ''}
+                                ${!editMode ? `<button class="btn-danger" onclick="event.stopPropagation(); deleteQuestion(${q.id})">✕ Remove</button>` : ''}
                             </div>
                         </div>
-                        ${q.imageData ? `<img src="${q.imageData}" alt="Question ${index + 1}" class="question-image">` : ''}
+                        <img src="${imageFolder}${q.image}" alt="Question ${index + 1}" class="question-image"
+                             onerror="this.style.display='none';">
                         <div class="question-topics">
-                            ${q.topics.map(t => `<span class="topic-tag">${t}</span>`).join('')}
+                            ${q.topic.map(t => `<span class="topic-tag">${t}</span>`).join('')}
                         </div>
                         <div class="question-meta">Year: ${q.year} | Paper: ${q.paper} | Q${q.question_number}</div>
                         ${(showAnswers || editMode) ? `
@@ -905,11 +826,10 @@
                 `).join('')}
             `;
 
-            // Show sidebar
             document.getElementById('sidebar').classList.add('active');
         }
 
-        // Delete question from worksheet
+        // Delete question
         function deleteQuestion(questionId) {
             currentQuestions = currentQuestions.filter(q => q.id !== questionId);
             renderWorksheet();
@@ -923,35 +843,19 @@
 
             const currentIds = currentQuestions.map(q => q.id);
             
-            const topicConditions = selectedTopics.map((_, i) => 
-                `(t.category = ? AND t.subcategory = ?)`
-            ).join(' OR ');
-            const topicParams = selectedTopics.flatMap(t => [t.category, t.subcategory]);
+            availableQuestions = questionsData.filter(q => {
+                if (currentIds.includes(q.id)) return false;
+                
+                return q.topic.some(t => {
+                    const parts = t.split(' > ');
+                    if (parts.length !== 2) return false;
+                    return selectedTopics.some(sel => 
+                        sel.category === parts[0] && sel.subcategory === parts[1]
+                    );
+                });
+            });
 
-            // Get questions not currently in worksheet
-            const placeholders = currentIds.length > 0 ? currentIds.map(() => '?').join(',') : '0';
-            const query = `
-                SELECT DISTINCT 
-                    q.id, q.year, q.paper, q.question_number, 
-                    q.difficulty, q.marks
-                FROM questions q
-                JOIN topics t ON q.id = t.question_id
-                WHERE (${topicConditions})
-                ${currentIds.length > 0 ? `AND q.id NOT IN (${placeholders})` : ''}
-                ORDER BY RANDOM()
-                LIMIT 50
-            `;
-
-            const params = [...topicParams, ...currentIds];
-            const stmt = db.prepare(query);
-            stmt.bind(params);
-
-            availableQuestions = [];
-            while (stmt.step()) {
-                availableQuestions.push(stmt.getAsObject());
-            }
-            stmt.free();
-
+            availableQuestions = shuffle(availableQuestions).slice(0, 50);
             renderSidebar();
         }
 
@@ -976,52 +880,12 @@
 
         // Add question from sidebar
         function addQuestion(questionId) {
-            // Get full question data
-            const stmt = db.prepare(`
-                SELECT id, year, paper, question_number, difficulty, marks, question, answer, image_filename
-                FROM questions
-                WHERE id = ?
-            `);
-            stmt.bind([questionId]);
-            
-            if (stmt.step()) {
-                const row = stmt.getAsObject();
-                
-                // Get topics
-                const topicStmt = db.prepare(`
-                    SELECT category, subcategory 
-                    FROM topics 
-                    WHERE question_id = ?
-                `);
-                topicStmt.bind([row.id]);
-                const topics = [];
-                while (topicStmt.step()) {
-                    const t = topicStmt.getAsObject();
-                    topics.push(`${t.category} > ${t.subcategory}`);
-                }
-                topicStmt.free();
-
-                // Get image
-                const imgStmt = db.prepare('SELECT image_data FROM images WHERE filename = ?');
-                imgStmt.bind([row.image_filename]);
-                let imageData = null;
-                if (imgStmt.step()) {
-                    const imgRow = imgStmt.getAsObject();
-                    const blob = new Blob([imgRow.image_data], { type: 'image/png' });
-                    imageData = URL.createObjectURL(blob);
-                }
-                imgStmt.free();
-
-                currentQuestions.push({
-                    ...row,
-                    topics: topics,
-                    imageData: imageData
-                });
-
+            const question = questionsData.find(q => q.id === questionId);
+            if (question) {
+                currentQuestions.push(question);
                 renderWorksheet();
                 loadAvailableQuestions();
             }
-            stmt.free();
         }
 
         // Toggle answers
@@ -1030,7 +894,7 @@
             renderWorksheet();
         }
 
-        // Print worksheet (no answers)
+        // Print worksheet
         function printWorksheet() {
             const wasShowing = showAnswers;
             showAnswers = false;
@@ -1058,14 +922,12 @@
         function toggleEditMode() {
             editMode = !editMode;
             const btn = document.getElementById('editModeBtn');
-            const downloadBtn = document.getElementById('downloadDbBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
             
             if (editMode) {
                 btn.style.background = '#ff9800';
                 btn.textContent = '✏️ Exit Edit Mode';
-                if (dbModified) {
-                    downloadBtn.style.display = 'inline-block';
-                }
+                downloadBtn.style.display = 'inline-block';
             } else {
                 btn.style.background = '';
                 btn.textContent = '✏️ Edit Mode';
@@ -1079,34 +941,32 @@
         function editQuestion(questionId) {
             if (!editMode) return;
             
-            const question = currentQuestions.find(q => q.id === questionId);
+            const question = questionsData.find(q => q.id === questionId);
             if (!question) return;
             
-            // Get all unique categories and subcategories from database
-            const stmt = db.prepare(`
-                SELECT DISTINCT category, subcategory 
-                FROM topics 
-                ORDER BY category, subcategory
-            `);
-            
+            // Get all unique categories and subcategories
             const categories = {};
-            while (stmt.step()) {
-                const row = stmt.getAsObject();
-                if (!categories[row.category]) {
-                    categories[row.category] = [];
-                }
-                categories[row.category].push(row.subcategory);
-            }
-            stmt.free();
+            questionsData.forEach(q => {
+                q.topic.forEach(topicStr => {
+                    const parts = topicStr.split(' > ');
+                    if (parts.length === 2) {
+                        const [category, subcategory] = parts;
+                        if (!categories[category]) {
+                            categories[category] = new Set();
+                        }
+                        categories[category].add(subcategory);
+                    }
+                });
+            });
             
-            // Build topic checkboxes organized by category
+            // Build topic checkboxes
             let topicHTML = '';
-            for (const [category, subcategories] of Object.entries(categories)) {
+            for (const [category, subcategories] of Object.entries(categories).sort()) {
                 topicHTML += `<div style="margin-bottom: 15px;">`;
                 topicHTML += `<strong style="display: block; margin-bottom: 8px; color: #2c3e50;">${category}</strong>`;
-                subcategories.forEach(sub => {
+                Array.from(subcategories).sort().forEach(sub => {
                     const topicStr = `${category} > ${sub}`;
-                    const checked = question.topics.includes(topicStr) ? 'checked' : '';
+                    const checked = question.topic.includes(topicStr) ? 'checked' : '';
                     topicHTML += `
                         <label style="display: block; margin-bottom: 5px; font-size: 13px;">
                             <input type="checkbox" class="edit-topic-checkbox" value="${topicStr}" ${checked}>
@@ -1169,17 +1029,15 @@
         }
 
         function saveEdit(questionId) {
-            const question = currentQuestions.find(q => q.id === questionId);
+            const question = questionsData.find(q => q.id === questionId);
             if (!question) return;
             
-            // Get new answer
             const newAnswer = document.getElementById('editAnswer').value.trim();
             if (!newAnswer) {
                 alert('Answer cannot be empty!');
                 return;
             }
             
-            // Get selected topics
             const selectedTopics = Array.from(document.querySelectorAll('.edit-topic-checkbox:checked'))
                 .map(cb => cb.value);
             
@@ -1188,74 +1046,31 @@
                 return;
             }
             
-            // Update in-memory question data
             question.answer = newAnswer;
-            question.topics = selectedTopics;
-            
-            // Update database
-            db.run('UPDATE questions SET answer = ? WHERE id = ?', [newAnswer, questionId]);
-            
-            // Delete old topics
-            db.run('DELETE FROM topics WHERE question_id = ?', [questionId]);
-            
-            // Insert new topics
-            selectedTopics.forEach(topic => {
-                const parts = topic.split(' > ');
-                if (parts.length === 2) {
-                    db.run('INSERT INTO topics (question_id, category, subcategory) VALUES (?, ?, ?)', 
-                           [questionId, parts[0], parts[1]]);
-                }
-            });
-            
-            dbModified = true;
-            document.getElementById('downloadDbBtn').style.display = 'inline-block';
+            question.topic = selectedTopics;
             
             closeEditPanel();
             renderWorksheet();
-            alert('✅ Changes saved! Click "Download Updated Database" when you\'re done editing.');
+            alert('✅ Changes saved! Click "Download Updated JSON" when done editing.');
         }
 
-        // Download updated database
-        function downloadDatabase() {
-            if (!dbModified) {
-                alert('No changes have been made to the database.');
-                return;
-            }
+        // Download updated JSON
+        function downloadJSON() {
+            const json = JSON.stringify({questions: questionsData}, null, 2);
+            const blob = new Blob([json], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
             
-            const confirmed = confirm(
-                '📥 Download Updated Database\n\n' +
-                'This will download a new sats_questions.db file with your changes.\n\n' +
-                'To update the website:\n' +
-                '1. Download this file\n' +
-                '2. Replace the old sats_questions.db in your GitHub repository\n' +
-                '3. Commit and push the changes\n\n' +
-                'Continue with download?'
-            );
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'questions_updated.json';
+            a.click();
             
-            if (!confirmed) return;
-            
-            try {
-                const data = db.export();
-                const blob = new Blob([data], { type: 'application/x-sqlite3' });
-                const url = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'sats_questions_updated.db';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                alert('✅ Database downloaded successfully!\n\nFilename: sats_questions_updated.db\n\nReplace your old database file with this one.');
-            } catch (error) {
-                console.error('Error exporting database:', error);
-                alert('❌ Error downloading database. Check console for details.');
-            }
+            URL.revokeObjectURL(url);
+            alert('✅ Downloaded! Replace your old questions.json with this file.');
         }
 
-        // Initialize on page load
-        initDatabase();
+        // Initialize
+        loadQuestions();
     </script>
 </body>
 </html>
