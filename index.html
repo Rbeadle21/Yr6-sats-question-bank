@@ -295,11 +295,39 @@
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
         
         .sidebar-question:hover {
             background: #f8f9fa;
             border-color: #3498db;
+        }
+        
+        .sidebar-question:hover .question-preview {
+            display: block;
+        }
+        
+        .question-preview {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            margin-left: 10px;
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 15px;
+            width: 400px;
+            max-width: 90vw;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+        
+        .question-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
         }
         
         .sidebar-question-header {
@@ -336,6 +364,7 @@
             margin-bottom: 25px;
             page-break-inside: avoid;
             position: relative;
+            cursor: move;
         }
         
         .question.deletable {
@@ -352,6 +381,29 @@
         
         .question.editable:hover {
             background: #fff3e0;
+        }
+        
+        .question.dragging {
+            opacity: 0.5;
+        }
+        
+        .question.drag-over {
+            border-top: 3px solid #3498db;
+        }
+        
+        .drag-handle {
+            display: inline-block;
+            cursor: move;
+            padding: 4px 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin-right: 8px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .drag-handle:hover {
+            background: #bdc3c7;
         }
         
         .edit-indicator {
@@ -417,6 +469,25 @@
             border: 1px solid #e0e0e0;
             border-radius: 4px;
             margin-bottom: 10px;
+        }
+        
+        .question-image-container {
+            position: relative;
+            display: inline-block;
+            max-width: 650px;
+        }
+        
+        .question-number-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(52, 152, 219, 0.9);
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         
         .question-topics {
@@ -800,18 +871,30 @@
                     </div>
                 </div>
                 ${currentQuestions.map((q, index) => `
-                    <div class="question ${editMode ? 'editable' : 'deletable'}" id="q-${q.id}" ${editMode ? `onclick="editQuestion(${q.id})"` : ''}>
+                    <div class="question ${editMode ? 'editable' : 'deletable'}" 
+                         id="q-${q.id}" 
+                         draggable="true"
+                         data-index="${index}"
+                         ${editMode ? `onclick="editQuestion(${q.id})"` : ''}>
                         ${editMode ? '<div class="edit-indicator">🖊️ Click to edit answer and topics</div>' : ''}
                         <div class="question-header">
-                            <span class="question-number">Question ${index + 1}</span>
+                            <span class="question-number">
+                                <span class="drag-handle" title="Drag to reorder">☰</span>
+                                Question ${index + 1}
+                            </span>
                             <div class="question-badges">
                                 <span class="difficulty-badge difficulty-${q.difficulty.toLowerCase()}">${q.difficulty}</span>
                                 <span class="question-marks">${q.marks} mark${q.marks > 1 ? 's' : ''}</span>
                                 ${!editMode ? `<button class="btn-danger" onclick="event.stopPropagation(); deleteQuestion(${q.id})">✕ Remove</button>` : ''}
                             </div>
                         </div>
-                        <img src="${imageFolder}${q.image}" alt="Question ${index + 1}" class="question-image"
-                             onerror="this.style.display='none';">
+                        <div class="question-image-container">
+                            <div class="question-number-overlay">${index + 1}</div>
+                            <img src="${imageFolder}${q.image}" 
+                                 alt="Question ${index + 1}" 
+                                 class="question-image"
+                                 onerror="this.style.display='none'; this.previousElementSibling.style.display='none';">
+                        </div>
                         <div class="question-topics">
                             ${q.topic.map(t => `<span class="topic-tag">${t}</span>`).join('')}
                         </div>
@@ -827,6 +910,66 @@
             `;
 
             document.getElementById('sidebar').classList.add('active');
+            
+            // Add drag and drop event listeners
+            setupDragAndDrop();
+        }
+        
+        // Setup drag and drop for reordering questions
+        function setupDragAndDrop() {
+            const questions = document.querySelectorAll('.question');
+            let draggedElement = null;
+            
+            questions.forEach(question => {
+                question.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.innerHTML);
+                });
+                
+                question.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    questions.forEach(q => q.classList.remove('drag-over'));
+                });
+                
+                question.addEventListener('dragover', function(e) {
+                    if (e.preventDefault) {
+                        e.preventDefault();
+                    }
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    if (draggedElement !== this) {
+                        this.classList.add('drag-over');
+                    }
+                    return false;
+                });
+                
+                question.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+                
+                question.addEventListener('drop', function(e) {
+                    if (e.stopPropagation) {
+                        e.stopPropagation();
+                    }
+                    
+                    if (draggedElement !== this) {
+                        const draggedIndex = parseInt(draggedElement.dataset.index);
+                        const targetIndex = parseInt(this.dataset.index);
+                        
+                        // Reorder the array
+                        const draggedQuestion = currentQuestions[draggedIndex];
+                        currentQuestions.splice(draggedIndex, 1);
+                        currentQuestions.splice(targetIndex, 0, draggedQuestion);
+                        
+                        renderWorksheet();
+                    }
+                    
+                    this.classList.remove('drag-over');
+                    return false;
+                });
+            });
         }
 
         // Delete question
@@ -874,6 +1017,9 @@
                         ${q.year} P${q.paper} Q${q.question_number} | ${q.difficulty}
                     </div>
                     <div class="sidebar-question-meta">${q.marks} mark${q.marks > 1 ? 's' : ''}</div>
+                    <div class="question-preview">
+                        <img src="${imageFolder}${q.image}" alt="Preview" onerror="this.parentElement.innerHTML='<p style=\\'color: #999; font-size: 12px;\\'>Image preview unavailable</p>'">
+                    </div>
                 </div>
             `).join('');
         }
