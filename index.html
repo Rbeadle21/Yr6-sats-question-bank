@@ -564,10 +564,14 @@
 
                 document.getElementById('loading').innerHTML = 'Downloading database (28 MB)... Please wait.';
 
-                // Load zipped database from GitHub Releases
-                const dbUrl = 'https://github.com/Rbeadle21/Yr6-sats-question-bank/releases/download/v1.0/sats_questions.zip';
+                // Load from repository root (served via jsDelivr CDN to avoid CORS)
+                const dbUrl = 'https://cdn.jsdelivr.net/gh/Rbeadle21/Yr6-sats-question-bank/sats_questions.zip';
+                
+                console.log('Attempting to fetch from:', dbUrl);
                 
                 const response = await fetch(dbUrl);
+                
+                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
                     throw new Error(`Failed to download database (HTTP ${response.status})`);
@@ -577,16 +581,20 @@
                 
                 // Get the zip file
                 const zipBlob = await response.blob();
+                console.log('Downloaded zip size:', zipBlob.size, 'bytes');
                 
                 // Unzip it
                 const zip = await JSZip.loadAsync(zipBlob);
+                console.log('Zip contents:', Object.keys(zip.files));
+                
                 const dbFile = zip.file('sats_questions.db');
                 
                 if (!dbFile) {
-                    throw new Error('Database file not found in zip archive');
+                    throw new Error('Database file not found in zip. Files: ' + Object.keys(zip.files).join(', '));
                 }
                 
                 const dbBuffer = await dbFile.async('arraybuffer');
+                console.log('Database buffer size:', dbBuffer.byteLength, 'bytes');
                 
                 document.getElementById('loading').innerHTML = 'Loading database... Please wait.';
                 
@@ -599,20 +607,24 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
             } catch (error) {
-                console.error('Error loading database:', error);
+                console.error('Detailed error:', error);
                 document.getElementById('loading').innerHTML = `
                     <div style="text-align: center; padding: 40px;">
                         <h3 style="color: #e74c3c; margin-bottom: 20px;">❌ Database Loading Error</h3>
                         <p style="color: #666; margin-bottom: 15px;">
-                            The database couldn't be loaded from GitHub Releases.
+                            The database couldn't be loaded.
                         </p>
                         <p style="color: #666; margin-bottom: 15px;">
-                            <strong>Please check:</strong><br>
-                            1. Release v1.0 exists at <a href="https://github.com/Rbeadle21/Yr6-sats-question-bank/releases" target="_blank">Releases</a><br>
-                            2. sats_questions.zip is attached to the release
+                            <strong>Possible issues:</strong><br>
+                            1. The database file may still be propagating through the CDN (wait a few minutes)<br>
+                            2. The v1.0 tag needs to exist in the repository<br>
+                            3. sats_questions.zip must be in the root of the repository
                         </p>
-                        <p style="color: #999; font-size: 13px; font-family: monospace;">
+                        <p style="color: #999; font-size: 13px; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px;">
                             Error: ${error.message}
+                        </p>
+                        <p style="color: #666; margin-top: 15px; font-size: 13px;">
+                            Press F12 and check Console tab for details.
                         </p>
                     </div>
                 `;
