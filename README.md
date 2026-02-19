@@ -117,6 +117,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Free for personal and educational use
 - Not for commercial distribution without permission
 
+## ☕ Support This Project
+
+If you find this resource useful, consider buying me a coffee — it helps keep the project going and motivates future improvements!
+
+[☕ Buy Me a Coffee](https://buymeacoffee.com/scriptworkstudio)
+
+## 📬 Feedback & Issues
+
+Spotted a bug, have a suggestion, or noticed a question that needs updating? We'd love to hear from you!
+
+📧 [scriptworkstudio@hotmail.com](mailto:scriptworkstudio@hotmail.com)
+
 ## 👨‍💻 Credits
 
 **Developed by Script Work Studio**
