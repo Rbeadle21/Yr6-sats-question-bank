@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SATs Question Bank</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
         * {
             margin: 0;
@@ -25,35 +26,9 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
         h1 {
             color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .branding {
-            text-align: right;
-        }
-        
-        .branding-text {
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 5px;
-        }
-        
-        .branding img {
-            height: 40px;
-            width: auto;
+            margin-bottom: 10px;
         }
         
         .loading {
@@ -103,6 +78,7 @@
             font-size: 14px;
         }
         
+        /* Category Tree Styles */
         .category-tree {
             max-height: 400px;
             overflow-y: auto;
@@ -255,6 +231,7 @@
             font-size: 14px;
         }
         
+        /* Worksheet Styles */
         .worksheet-container {
             display: flex;
             gap: 20px;
@@ -288,37 +265,6 @@
             color: #2c3e50;
         }
         
-        .sidebar-filters {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        
-        .sidebar-filter-group {
-            margin-bottom: 10px;
-        }
-        
-        .sidebar-filter-group:last-child {
-            margin-bottom: 0;
-        }
-        
-        .sidebar-filter-group label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #666;
-            display: block;
-            margin-bottom: 3px;
-        }
-        
-        .sidebar-filter-group select {
-            width: 100%;
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        
         .sidebar-question {
             padding: 10px;
             margin-bottom: 8px;
@@ -326,84 +272,11 @@
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
-            position: relative;
         }
         
         .sidebar-question:hover {
             background: #f8f9fa;
             border-color: #3498db;
-        }
-        
-        .question-preview-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 3px solid #3498db;
-            border-radius: 8px;
-            padding: 20px;
-            max-width: 90vw;
-            max-height: 90vh;
-            overflow: auto;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            z-index: 10000;
-        }
-        
-        .question-preview-modal.active {
-            display: block;
-        }
-        
-        .preview-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 9999;
-        }
-        
-        .preview-overlay.active {
-            display: block;
-        }
-        
-        .question-preview-modal img {
-            width: 100%;
-            max-width: 800px;
-            height: auto;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .preview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .preview-title {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .preview-close {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        
-        .preview-close:hover {
-            background: #c0392b;
         }
         
         .sidebar-question-header {
@@ -440,7 +313,6 @@
             margin-bottom: 25px;
             page-break-inside: avoid;
             position: relative;
-            cursor: move;
         }
         
         .question.deletable {
@@ -457,29 +329,6 @@
         
         .question.editable:hover {
             background: #fff3e0;
-        }
-        
-        .question.dragging {
-            opacity: 0.5;
-        }
-        
-        .question.drag-over {
-            border-top: 3px solid #3498db;
-        }
-        
-        .drag-handle {
-            display: inline-block;
-            cursor: move;
-            padding: 4px 8px;
-            background: #ecf0f1;
-            border-radius: 4px;
-            margin-right: 8px;
-            font-size: 12px;
-            color: #7f8c8d;
-        }
-        
-        .drag-handle:hover {
-            background: #bdc3c7;
         }
         
         .edit-indicator {
@@ -547,26 +396,6 @@
             margin-bottom: 10px;
         }
         
-        .question-image-container {
-            position: relative;
-            display: inline-block;
-            max-width: 650px;
-        }
-        
-        .question-number-overlay {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgb(41, 128, 185);
-            color: white;
-            font-weight: bold;
-            font-size: 24px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-            border: 2px solid white;
-        }
-        
         .question-topics {
             display: flex;
             flex-wrap: wrap;
@@ -614,6 +443,74 @@
             font-size: 18px;
         }
         
+        /* Support Section */
+        .support-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+            margin-bottom: 10px;
+        }
+
+        .support-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .support-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .support-card p {
+            color: #7f8c8d;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .btn-coffee {
+            display: inline-block;
+            background: #FFDD00;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .btn-coffee:hover {
+            background: #f0cc00;
+        }
+
+        .btn-email {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .btn-email:hover {
+            background: #2980b9;
+        }
+
+        @media print {
+            .support-section {
+                display: none;
+            }
+        }
+
         @media print {
             body {
                 background: white;
@@ -637,20 +534,20 @@
 </head>
 <body>
     <div class="header">
-        <div class="header-content">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h1>📚 SATs Mathematics Question Bank</h1>
-                <p class="subtitle">Year 6 SATs Practice Questions (2000-2025)</p>
+                <p style="color: #666; margin-top: 5px;">Year 6 SATs Practice Questions (2000-2025)</p>
             </div>
-            <div class="branding">
-                <p class="branding-text">Brought to you by</p>
-                <img src="logo.png" alt="Script Work Studio">
+            <div style="text-align: right;">
+                <p style="font-size: 12px; color: #999; margin-bottom: 5px;">Brought to you by</p>
+                <img src="logo.png" alt="Script Work Studio" style="height: 40px; width: auto; object-fit: contain;">
             </div>
         </div>
     </div>
 
     <div id="loading" class="loading">
-        Loading questions... Please wait.
+        Loading database... Please wait.
     </div>
 
     <div id="app" style="display: none;">
@@ -698,7 +595,7 @@
                     <button class="btn-secondary" onclick="printWorksheet()">🖨️ Print Worksheet</button>
                     <button class="btn-secondary" onclick="printAnswerSheet()">📄 Print Answers</button>
                     <button id="editModeBtn" class="btn-secondary" onclick="toggleEditMode()">✏️ Edit Mode</button>
-                    <button id="downloadBtn" class="btn-success" onclick="downloadJSON()" style="display: none;">💾 Download Updated JSON</button>
+                    <button id="downloadDbBtn" class="btn-success" onclick="downloadDatabase()" style="display: none;">💾 Download Updated Database</button>
                 </div>
             </div>
         </div>
@@ -706,28 +603,6 @@
         <div class="worksheet-container">
             <div class="sidebar" id="sidebar">
                 <h3>Available Questions</h3>
-                <div class="sidebar-filters">
-                    <div class="sidebar-filter-group">
-                        <label>Difficulty</label>
-                        <select id="sidebarDifficulty" onchange="loadAvailableQuestions()">
-                            <option value="all">All</option>
-                            <option value="Easy">Easy</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Hard">Hard</option>
-                        </select>
-                    </div>
-                    <div class="sidebar-filter-group">
-                        <label>Year</label>
-                        <select id="sidebarYear" onchange="loadAvailableQuestions()">
-                            <option value="all">All Years</option>
-                            <option value="2020-2025">2020-2025</option>
-                            <option value="2015-2019">2015-2019</option>
-                            <option value="2010-2014">2010-2014</option>
-                            <option value="2005-2009">2005-2009</option>
-                            <option value="2000-2004">2000-2004</option>
-                        </select>
-                    </div>
-                </div>
                 <div id="sidebarQuestions"></div>
             </div>
             
@@ -739,72 +614,81 @@
         </div>
     </div>
 
-    <div class="preview-overlay" id="previewOverlay" onclick="closePreview()"></div>
-    <div class="question-preview-modal" id="previewModal">
-        <div class="preview-header">
-            <span class="preview-title" id="previewTitle"></span>
-            <button class="preview-close" onclick="closePreview()">✕ Close</button>
+    <!-- Support Section -->
+    <div class="support-section" style="max-width: 1400px; margin: 30px auto 20px; padding: 0 20px;">
+        <div class="support-card">
+            <h3>☕ Support This Project</h3>
+            <p>This tool is completely free to use. If you find it helpful in your classroom or at home, consider buying me a coffee — it helps keep the project going and motivates future improvements!</p>
+            <a href="https://buymeacoffee.com/scriptworkstudio" target="_blank" rel="noopener" class="btn-coffee">☕ Buy Me a Coffee</a>
         </div>
-        <img id="previewImage" src="" alt="Question Preview">
+        <div class="support-card">
+            <h3>📬 Feedback & Issues</h3>
+            <p>Spotted a bug, have a suggestion, or noticed a question that needs updating? We'd love to hear from you — your feedback genuinely helps make this resource better for everyone.</p>
+            <a href="mailto:scriptworkstudio@hotmail.com" class="btn-email">✉️ scriptworkstudio@hotmail.com</a>
+        </div>
     </div>
 
     <script>
-        let questionsData = [];
+        let db = null;
         let currentQuestions = [];
         let showAnswers = false;
-        let editMode = false;
         let availableQuestions = [];
-        const imageFolder = 'images/';
+        let editMode = false;
+        let dbModified = false;
 
-        // Load questions from JSON
-        async function loadQuestions() {
+        // Initialize SQL.js and load database
+        async function initDatabase() {
             try {
-                const response = await fetch('questions.json');
-                const data = await response.json();
-                questionsData = data.questions;
-                
-                console.log(`Loaded ${questionsData.length} questions`);
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+
+                const response = await fetch('sats_questions.db');
+                const buffer = await response.arrayBuffer();
+                db = new SQL.Database(new Uint8Array(buffer));
+
+                console.log('Database loaded successfully');
                 loadCategoryTree();
                 updateStats();
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
             } catch (error) {
-                console.error('Error loading questions:', error);
-                document.getElementById('loading').innerHTML = `
-                    <div style="color: #e74c3c;">
-                        ❌ Error loading questions.json<br>
-                        <span style="font-size: 14px;">Please ensure questions.json is in the same directory.</span>
-                    </div>
-                `;
+                console.error('Error loading database:', error);
+                document.getElementById('loading').innerHTML = 
+                    '❌ Error loading database. Please ensure sats_questions.db is in the same directory as this file.';
             }
         }
 
-        // Load category tree
+        // Load category tree with checkboxes
         function loadCategoryTree() {
+            const stmt = db.prepare(`
+                SELECT 
+                    category,
+                    subcategory,
+                    COUNT(DISTINCT question_id) as count
+                FROM topics
+                GROUP BY category, subcategory
+                ORDER BY category, subcategory
+            `);
+
             const categories = {};
-            
-            // Build category structure
-            questionsData.forEach(q => {
-                q.topic.forEach(topicStr => {
-                    const parts = topicStr.split(' > ');
-                    if (parts.length === 2) {
-                        const [category, subcategory] = parts;
-                        if (!categories[category]) {
-                            categories[category] = {};
-                        }
-                        if (!categories[category][subcategory]) {
-                            categories[category][subcategory] = 0;
-                        }
-                        categories[category][subcategory]++;
-                    }
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                if (!categories[row.category]) {
+                    categories[row.category] = [];
+                }
+                categories[row.category].push({
+                    name: row.subcategory,
+                    count: row.count
                 });
-            });
+            }
+            stmt.free();
 
             const container = document.getElementById('categoryTree');
             container.innerHTML = '';
 
-            for (const [category, subcategories] of Object.entries(categories).sort()) {
+            for (const [category, subcategories] of Object.entries(categories)) {
                 const categoryDiv = document.createElement('div');
                 categoryDiv.className = 'category';
 
@@ -819,15 +703,15 @@
                 const subcatDiv = document.createElement('div');
                 subcatDiv.className = 'subcategories';
 
-                Object.entries(subcategories).sort().forEach(([sub, count]) => {
+                subcategories.forEach(sub => {
                     const subDiv = document.createElement('div');
                     subDiv.className = 'subcategory';
                     subDiv.innerHTML = `
                         <input type="checkbox" class="subcategory-checkbox" 
                                data-category="${category}" 
-                               data-subcategory="${sub}">
-                        <span class="subcategory-name">${sub}</span>
-                        <span class="question-count">${count}</span>
+                               data-subcategory="${sub.name}">
+                        <span class="subcategory-name">${sub.name}</span>
+                        <span class="question-count">${sub.count}</span>
                     `;
                     subcatDiv.appendChild(subDiv);
                 });
@@ -883,33 +767,28 @@
                 return;
             }
 
-            const matchingQuestions = questionsData.filter(q => 
-                q.topic.some(t => {
-                    const parts = t.split(' > ');
-                    if (parts.length !== 2) return false;
-                    return selectedTopics.some(sel => 
-                        sel.category === parts[0] && sel.subcategory === parts[1]
-                    );
-                })
-            );
+            // Count available questions
+            let totalQuestions = 0;
+            selectedTopics.forEach(topic => {
+                const stmt = db.prepare(`
+                    SELECT COUNT(DISTINCT question_id) as count
+                    FROM topics
+                    WHERE category = ? AND subcategory = ?
+                `);
+                stmt.bind([topic.category, topic.subcategory]);
+                if (stmt.step()) {
+                    totalQuestions += stmt.getAsObject().count;
+                }
+                stmt.free();
+            });
 
             stats.innerHTML = `
                 <strong>Selected:</strong> ${selectedTopics.length} topic${selectedTopics.length !== 1 ? 's' : ''} | 
-                ${matchingQuestions.length} available questions
+                ${totalQuestions} available questions
             `;
         }
 
-        // Shuffle array
-        function shuffle(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
-        }
-
-        // Generate worksheet
+        // Generate worksheet with random questions
         function generateWorksheet() {
             const selectedTopics = getSelectedTopics();
             
@@ -922,33 +801,84 @@
             const difficulty = document.getElementById('difficultyFilter').value;
             const yearRange = document.getElementById('yearFilter').value;
 
-            // Filter questions
-            let filteredQuestions = questionsData.filter(q => {
-                // Check topics
-                const hasMatchingTopic = q.topic.some(t => {
-                    const parts = t.split(' > ');
-                    if (parts.length !== 2) return false;
-                    return selectedTopics.some(sel => 
-                        sel.category === parts[0] && sel.subcategory === parts[1]
-                    );
-                });
-                if (!hasMatchingTopic) return false;
+            // Build WHERE clause for topics
+            const topicConditions = selectedTopics.map((_, i) => 
+                `(t.category = ? AND t.subcategory = ?)`
+            ).join(' OR ');
 
-                // Check difficulty
-                if (difficulty !== 'all' && q.difficulty !== difficulty) return false;
+            const topicParams = selectedTopics.flatMap(t => [t.category, t.subcategory]);
 
-                // Check year range
-                if (yearRange !== 'all') {
-                    const [startYear, endYear] = yearRange.split('-').map(Number);
-                    if (q.year < startYear || q.year > endYear) return false;
+            // Build year filter
+            let yearCondition = '';
+            let yearParams = [];
+            if (yearRange !== 'all') {
+                const [startYear, endYear] = yearRange.split('-').map(Number);
+                yearCondition = ' AND q.year BETWEEN ? AND ?';
+                yearParams = [startYear, endYear];
+            }
+
+            // Build difficulty filter
+            let difficultyCondition = '';
+            let difficultyParams = [];
+            if (difficulty !== 'all') {
+                difficultyCondition = ' AND q.difficulty = ?';
+                difficultyParams = [difficulty];
+            }
+
+            // Query for questions (with RANDOM for shuffling)
+            const query = `
+                SELECT DISTINCT 
+                    q.id, q.year, q.paper, q.question_number, 
+                    q.difficulty, q.marks, q.question, q.answer, q.image_filename
+                FROM questions q
+                JOIN topics t ON q.id = t.question_id
+                WHERE (${topicConditions})
+                ${yearCondition}
+                ${difficultyCondition}
+                ORDER BY RANDOM()
+                LIMIT ?
+            `;
+
+            const params = [...topicParams, ...yearParams, ...difficultyParams, limit];
+            const stmt = db.prepare(query);
+            stmt.bind(params);
+
+            currentQuestions = [];
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                
+                // Get topics for this question
+                const topicStmt = db.prepare(`
+                    SELECT category, subcategory 
+                    FROM topics 
+                    WHERE question_id = ?
+                `);
+                topicStmt.bind([row.id]);
+                const topics = [];
+                while (topicStmt.step()) {
+                    const t = topicStmt.getAsObject();
+                    topics.push(`${t.category} > ${t.subcategory}`);
                 }
+                topicStmt.free();
 
-                return true;
-            });
+                // Get image data
+                const imgStmt = db.prepare('SELECT image_data FROM images WHERE filename = ?');
+                imgStmt.bind([row.image_filename]);
+                let imageData = null;
+                if (imgStmt.step()) {
+                    const imgRow = imgStmt.getAsObject();
+                    const blob = new Blob([imgRow.image_data], { type: 'image/png' });
+                    imageData = URL.createObjectURL(blob);
+                }
+                imgStmt.free();
 
-            // Shuffle and limit
-            filteredQuestions = shuffle(filteredQuestions).slice(0, limit);
-            currentQuestions = filteredQuestions;
+                currentQuestions.push({
+                    ...row,
+                    topics: topics,
+                    imageData: imageData
+                });
+            }
+            stmt.free();
 
             renderWorksheet();
             loadAvailableQuestions();
@@ -979,32 +909,19 @@
                     </div>
                 </div>
                 ${currentQuestions.map((q, index) => `
-                    <div class="question ${editMode ? 'editable' : 'deletable'}" 
-                         id="q-${q.id}" 
-                         draggable="true"
-                         data-index="${index}"
-                         ${editMode ? `onclick="editQuestion(${q.id})"` : ''}>
+                    <div class="question ${editMode ? 'editable' : 'deletable'}" id="q-${q.id}" ${editMode ? `onclick="editQuestion(${q.id})"` : ''}>
                         ${editMode ? '<div class="edit-indicator">🖊️ Click to edit answer and topics</div>' : ''}
                         <div class="question-header">
-                            <span class="question-number">
-                                <span class="drag-handle" title="Drag to reorder">☰</span>
-                                Question ${index + 1}
-                            </span>
+                            <span class="question-number">Question ${index + 1}</span>
                             <div class="question-badges">
                                 <span class="difficulty-badge difficulty-${q.difficulty.toLowerCase()}">${q.difficulty}</span>
                                 <span class="question-marks">${q.marks} mark${q.marks > 1 ? 's' : ''}</span>
-                                ${!editMode ? `<button class="btn-danger" onclick="event.stopPropagation(); deleteQuestion(${q.id})">✕ Remove</button>` : ''}
+                                ${!editMode ? `<button class="btn-danger" onclick="deleteQuestion(${q.id})">✕ Remove</button>` : ''}
                             </div>
                         </div>
-                        <div class="question-image-container">
-                            <div class="question-number-overlay">${index + 1}</div>
-                            <img src="${imageFolder}${q.image}" 
-                                 alt="Question ${index + 1}" 
-                                 class="question-image"
-                                 onerror="this.style.display='none'; this.previousElementSibling.style.display='none';">
-                        </div>
+                        ${q.imageData ? `<img src="${q.imageData}" alt="Question ${index + 1}" class="question-image">` : ''}
                         <div class="question-topics">
-                            ${q.topic.map(t => `<span class="topic-tag">${t}</span>`).join('')}
+                            ${q.topics.map(t => `<span class="topic-tag">${t}</span>`).join('')}
                         </div>
                         <div class="question-meta">Year: ${q.year} | Paper: ${q.paper} | Q${q.question_number}</div>
                         ${(showAnswers || editMode) ? `
@@ -1017,70 +934,11 @@
                 `).join('')}
             `;
 
+            // Show sidebar
             document.getElementById('sidebar').classList.add('active');
-            
-            // Add drag and drop event listeners
-            setupDragAndDrop();
-        }
-        
-        // Setup drag and drop for reordering questions
-        function setupDragAndDrop() {
-            const questions = document.querySelectorAll('.question');
-            let draggedElement = null;
-            
-            questions.forEach(question => {
-                question.addEventListener('dragstart', function(e) {
-                    draggedElement = this;
-                    this.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/html', this.innerHTML);
-                });
-                
-                question.addEventListener('dragend', function(e) {
-                    this.classList.remove('dragging');
-                    questions.forEach(q => q.classList.remove('drag-over'));
-                });
-                
-                question.addEventListener('dragover', function(e) {
-                    if (e.preventDefault) {
-                        e.preventDefault();
-                    }
-                    e.dataTransfer.dropEffect = 'move';
-                    
-                    if (draggedElement !== this) {
-                        this.classList.add('drag-over');
-                    }
-                    return false;
-                });
-                
-                question.addEventListener('dragleave', function(e) {
-                    this.classList.remove('drag-over');
-                });
-                
-                question.addEventListener('drop', function(e) {
-                    if (e.stopPropagation) {
-                        e.stopPropagation();
-                    }
-                    
-                    if (draggedElement !== this) {
-                        const draggedIndex = parseInt(draggedElement.dataset.index);
-                        const targetIndex = parseInt(this.dataset.index);
-                        
-                        // Reorder the array
-                        const draggedQuestion = currentQuestions[draggedIndex];
-                        currentQuestions.splice(draggedIndex, 1);
-                        currentQuestions.splice(targetIndex, 0, draggedQuestion);
-                        
-                        renderWorksheet();
-                    }
-                    
-                    this.classList.remove('drag-over');
-                    return false;
-                });
-            });
         }
 
-        // Delete question
+        // Delete question from worksheet
         function deleteQuestion(questionId) {
             currentQuestions = currentQuestions.filter(q => q.id !== questionId);
             renderWorksheet();
@@ -1093,35 +951,36 @@
             if (selectedTopics.length === 0) return;
 
             const currentIds = currentQuestions.map(q => q.id);
-            const sidebarDifficulty = document.getElementById('sidebarDifficulty').value;
-            const sidebarYear = document.getElementById('sidebarYear').value;
             
-            availableQuestions = questionsData.filter(q => {
-                if (currentIds.includes(q.id)) return false;
-                
-                // Check topics
-                const hasMatchingTopic = q.topic.some(t => {
-                    const parts = t.split(' > ');
-                    if (parts.length !== 2) return false;
-                    return selectedTopics.some(sel => 
-                        sel.category === parts[0] && sel.subcategory === parts[1]
-                    );
-                });
-                if (!hasMatchingTopic) return false;
-                
-                // Check difficulty filter
-                if (sidebarDifficulty !== 'all' && q.difficulty !== sidebarDifficulty) return false;
-                
-                // Check year filter
-                if (sidebarYear !== 'all') {
-                    const [startYear, endYear] = sidebarYear.split('-').map(Number);
-                    if (q.year < startYear || q.year > endYear) return false;
-                }
-                
-                return true;
-            });
+            const topicConditions = selectedTopics.map((_, i) => 
+                `(t.category = ? AND t.subcategory = ?)`
+            ).join(' OR ');
+            const topicParams = selectedTopics.flatMap(t => [t.category, t.subcategory]);
 
-            availableQuestions = shuffle(availableQuestions).slice(0, 50);
+            // Get questions not currently in worksheet
+            const placeholders = currentIds.length > 0 ? currentIds.map(() => '?').join(',') : '0';
+            const query = `
+                SELECT DISTINCT 
+                    q.id, q.year, q.paper, q.question_number, 
+                    q.difficulty, q.marks
+                FROM questions q
+                JOIN topics t ON q.id = t.question_id
+                WHERE (${topicConditions})
+                ${currentIds.length > 0 ? `AND q.id NOT IN (${placeholders})` : ''}
+                ORDER BY RANDOM()
+                LIMIT 50
+            `;
+
+            const params = [...topicParams, ...currentIds];
+            const stmt = db.prepare(query);
+            stmt.bind(params);
+
+            availableQuestions = [];
+            while (stmt.step()) {
+                availableQuestions.push(stmt.getAsObject());
+            }
+            stmt.free();
+
             renderSidebar();
         }
 
@@ -1138,42 +997,60 @@
                 <div class="sidebar-question" onclick="addQuestion(${q.id})">
                     <div class="sidebar-question-header">
                         ${q.year} P${q.paper} Q${q.question_number} | ${q.difficulty}
-                        <button onclick="event.stopPropagation(); showPreview(${q.id})" 
-                                style="float: right; padding: 2px 6px; font-size: 10px; background: #3498db; 
-                                       color: white; border: none; border-radius: 3px; cursor: pointer;"
-                                title="Preview question">👁️</button>
                     </div>
                     <div class="sidebar-question-meta">${q.marks} mark${q.marks > 1 ? 's' : ''}</div>
                 </div>
             `).join('');
         }
-        
-        // Show preview modal
-        function showPreview(questionId) {
-            const question = questionsData.find(q => q.id === questionId);
-            if (!question) return;
-            
-            document.getElementById('previewTitle').textContent = 
-                `${question.year} Paper ${question.paper} Q${question.question_number} - ${question.difficulty} (${question.marks} mark${question.marks > 1 ? 's' : ''})`;
-            document.getElementById('previewImage').src = imageFolder + question.image;
-            document.getElementById('previewModal').classList.add('active');
-            document.getElementById('previewOverlay').classList.add('active');
-        }
-        
-        // Close preview modal
-        function closePreview() {
-            document.getElementById('previewModal').classList.remove('active');
-            document.getElementById('previewOverlay').classList.remove('active');
-        }
 
         // Add question from sidebar
         function addQuestion(questionId) {
-            const question = questionsData.find(q => q.id === questionId);
-            if (question) {
-                currentQuestions.push(question);
+            // Get full question data
+            const stmt = db.prepare(`
+                SELECT id, year, paper, question_number, difficulty, marks, question, answer, image_filename
+                FROM questions
+                WHERE id = ?
+            `);
+            stmt.bind([questionId]);
+            
+            if (stmt.step()) {
+                const row = stmt.getAsObject();
+                
+                // Get topics
+                const topicStmt = db.prepare(`
+                    SELECT category, subcategory 
+                    FROM topics 
+                    WHERE question_id = ?
+                `);
+                topicStmt.bind([row.id]);
+                const topics = [];
+                while (topicStmt.step()) {
+                    const t = topicStmt.getAsObject();
+                    topics.push(`${t.category} > ${t.subcategory}`);
+                }
+                topicStmt.free();
+
+                // Get image
+                const imgStmt = db.prepare('SELECT image_data FROM images WHERE filename = ?');
+                imgStmt.bind([row.image_filename]);
+                let imageData = null;
+                if (imgStmt.step()) {
+                    const imgRow = imgStmt.getAsObject();
+                    const blob = new Blob([imgRow.image_data], { type: 'image/png' });
+                    imageData = URL.createObjectURL(blob);
+                }
+                imgStmt.free();
+
+                currentQuestions.push({
+                    ...row,
+                    topics: topics,
+                    imageData: imageData
+                });
+
                 renderWorksheet();
                 loadAvailableQuestions();
             }
+            stmt.free();
         }
 
         // Toggle answers
@@ -1182,7 +1059,7 @@
             renderWorksheet();
         }
 
-        // Print worksheet
+        // Print worksheet (no answers)
         function printWorksheet() {
             const wasShowing = showAnswers;
             showAnswers = false;
@@ -1210,12 +1087,14 @@
         function toggleEditMode() {
             editMode = !editMode;
             const btn = document.getElementById('editModeBtn');
-            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadBtn = document.getElementById('downloadDbBtn');
             
             if (editMode) {
                 btn.style.background = '#ff9800';
                 btn.textContent = '✏️ Exit Edit Mode';
-                downloadBtn.style.display = 'inline-block';
+                if (dbModified) {
+                    downloadBtn.style.display = 'inline-block';
+                }
             } else {
                 btn.style.background = '';
                 btn.textContent = '✏️ Edit Mode';
@@ -1229,32 +1108,34 @@
         function editQuestion(questionId) {
             if (!editMode) return;
             
-            const question = questionsData.find(q => q.id === questionId);
+            const question = currentQuestions.find(q => q.id === questionId);
             if (!question) return;
             
-            // Get all unique categories and subcategories
-            const categories = {};
-            questionsData.forEach(q => {
-                q.topic.forEach(topicStr => {
-                    const parts = topicStr.split(' > ');
-                    if (parts.length === 2) {
-                        const [category, subcategory] = parts;
-                        if (!categories[category]) {
-                            categories[category] = new Set();
-                        }
-                        categories[category].add(subcategory);
-                    }
-                });
-            });
+            // Get all unique categories and subcategories from database
+            const stmt = db.prepare(`
+                SELECT DISTINCT category, subcategory 
+                FROM topics 
+                ORDER BY category, subcategory
+            `);
             
-            // Build topic checkboxes
+            const categories = {};
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                if (!categories[row.category]) {
+                    categories[row.category] = [];
+                }
+                categories[row.category].push(row.subcategory);
+            }
+            stmt.free();
+            
+            // Build topic checkboxes organized by category
             let topicHTML = '';
-            for (const [category, subcategories] of Object.entries(categories).sort()) {
+            for (const [category, subcategories] of Object.entries(categories)) {
                 topicHTML += `<div style="margin-bottom: 15px;">`;
                 topicHTML += `<strong style="display: block; margin-bottom: 8px; color: #2c3e50;">${category}</strong>`;
-                Array.from(subcategories).sort().forEach(sub => {
+                subcategories.forEach(sub => {
                     const topicStr = `${category} > ${sub}`;
-                    const checked = question.topic.includes(topicStr) ? 'checked' : '';
+                    const checked = question.topics.includes(topicStr) ? 'checked' : '';
                     topicHTML += `
                         <label style="display: block; margin-bottom: 5px; font-size: 13px;">
                             <input type="checkbox" class="edit-topic-checkbox" value="${topicStr}" ${checked}>
@@ -1317,15 +1198,17 @@
         }
 
         function saveEdit(questionId) {
-            const question = questionsData.find(q => q.id === questionId);
+            const question = currentQuestions.find(q => q.id === questionId);
             if (!question) return;
             
+            // Get new answer
             const newAnswer = document.getElementById('editAnswer').value.trim();
             if (!newAnswer) {
                 alert('Answer cannot be empty!');
                 return;
             }
             
+            // Get selected topics
             const selectedTopics = Array.from(document.querySelectorAll('.edit-topic-checkbox:checked'))
                 .map(cb => cb.value);
             
@@ -1334,31 +1217,74 @@
                 return;
             }
             
+            // Update in-memory question data
             question.answer = newAnswer;
-            question.topic = selectedTopics;
+            question.topics = selectedTopics;
+            
+            // Update database
+            db.run('UPDATE questions SET answer = ? WHERE id = ?', [newAnswer, questionId]);
+            
+            // Delete old topics
+            db.run('DELETE FROM topics WHERE question_id = ?', [questionId]);
+            
+            // Insert new topics
+            selectedTopics.forEach(topic => {
+                const parts = topic.split(' > ');
+                if (parts.length === 2) {
+                    db.run('INSERT INTO topics (question_id, category, subcategory) VALUES (?, ?, ?)', 
+                           [questionId, parts[0], parts[1]]);
+                }
+            });
+            
+            dbModified = true;
+            document.getElementById('downloadDbBtn').style.display = 'inline-block';
             
             closeEditPanel();
             renderWorksheet();
-            alert('✅ Changes saved! Click "Download Updated JSON" when done editing.');
+            alert('✅ Changes saved! Click "Download Updated Database" when you\'re done editing.');
         }
 
-        // Download updated JSON
-        function downloadJSON() {
-            const json = JSON.stringify({questions: questionsData}, null, 2);
-            const blob = new Blob([json], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
+        // Download updated database
+        function downloadDatabase() {
+            if (!dbModified) {
+                alert('No changes have been made to the database.');
+                return;
+            }
             
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'questions_updated.json';
-            a.click();
+            const confirmed = confirm(
+                '📥 Download Updated Database\n\n' +
+                'This will download a new sats_questions.db file with your changes.\n\n' +
+                'To update the website:\n' +
+                '1. Download this file\n' +
+                '2. Replace the old sats_questions.db in your GitHub repository\n' +
+                '3. Commit and push the changes\n\n' +
+                'Continue with download?'
+            );
             
-            URL.revokeObjectURL(url);
-            alert('✅ Downloaded! Replace your old questions.json with this file.');
+            if (!confirmed) return;
+            
+            try {
+                const data = db.export();
+                const blob = new Blob([data], { type: 'application/x-sqlite3' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'sats_questions_updated.db';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Database downloaded successfully!\n\nFilename: sats_questions_updated.db\n\nReplace your old database file with this one.');
+            } catch (error) {
+                console.error('Error exporting database:', error);
+                alert('❌ Error downloading database. Check console for details.');
+            }
         }
 
-        // Initialize
-        loadQuestions();
+        // Initialize on page load
+        initDatabase();
     </script>
 </body>
 </html>
